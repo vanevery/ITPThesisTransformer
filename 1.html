@@ -1,0 +1,59 @@
+<html>
+	<head>
+		<script type="text/javascript" src="JSARToolKit.min.js"></script>
+		<script type="text/javascript" src="ardetector.js"></script>
+		<script type="text/javascript">
+
+		var one = null;
+		var onecanvas = null;
+		var detector = null;
+		var ctx = null;
+
+		function initCanvas() {
+			one = document.getElementById("one");			
+			onecanvas = document.getElementById("onecanvas");
+//			onecanvas.width = one.width;
+//			onecanvas.height = one.height;
+			ctx = onecanvas.getContext('2d');
+			
+			
+			//onecanvas.getContext('2d').drawImage(one, 0, 0, one.width, one.height);
+			DEBUG = true;
+			detector = create(onecanvas);
+		}
+		
+		function doIt() {
+			//detector.getCameraMatrix(10,1000);
+
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0,0,320,240);
+        i = 0;
+        var dt = new Date().getTime();
+          ctx.save();
+            ctx.translate(160+Math.sin(i/4*Math.PI*2+dt/1000)*80,90+Math.cos(i/4*Math.PI*2+dt/1000)*80);
+            ctx.scale(0.145+0.035*Math.sin(Math.PI*i/4+dt/1000), 0.145+0.035*Math.sin(Math.PI*i/4+dt/1000));
+            ctx.translate(one.width/2,one.height/2);
+            ctx.rotate(i/2*Math.PI+(dt/500)%(Math.PI*2));
+            ctx.translate(-one.width/2,-one.height/2);
+            ctx.drawImage(one,0,0);
+          ctx.restore();			
+
+			onecanvas.changed = true;
+			detector.detect(function(marker) { console.log("oncreate: " + marker); }, function(marker) { console.log("onupdate: " + marker); }, function(marker) { console.log("ondestroy: " + marker); });
+						
+			for (var i = 0; i < detector.markers.length; i++) {
+				console.log(detector.markers[i]);
+				
+			}			
+		}
+	
+	
+		</script>
+	</head>
+	<body onload="initCanvas();">
+		<img src="1.png" id="one" onclick="doIt();">
+		<canvas id="onecanvas" width="320" height="240"></canvas>
+
+		<canvas id="debugCanvas"></canvas>
+	</body>
+</html>

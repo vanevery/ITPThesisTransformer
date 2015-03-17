@@ -1,0 +1,41 @@
+<html>
+	<head>
+		<script src="/socket.io/socket.io.js"></script>
+		<script>
+			var socket = io.connect('http://localhost:8080/');
+			
+			var thecanvas = null;
+			var thecontext = null;
+						
+			socket.on('connect', function() {
+				console.log("Connected");
+			});
+
+			socket.on('image', function (data) {
+                //console.log("Got image");
+				document.getElementById('imagefile').src = data.dataUrl;
+				document.getElementById('imagefile').style.transform = "matrix3d(" + data.rotationMatrix[0] + ","
+															+ data.rotationMatrix[1] + ","
+															+ data.rotationMatrix[2] + ","
+															+ data.rotationMatrix[3] + ","
+															+ data.rotationMatrix[4] + ","
+															+ data.rotationMatrix[5] + ","
+															+ data.rotationMatrix[6] + ","
+															+ data.rotationMatrix[7] + ","
+															+ data.rotationMatrix[8] + ","
+															+ data.rotationMatrix[9] + ","
+															+ data.rotationMatrix[10] + ","
+															+ data.rotationMatrix[11] + ","
+															+ data.rotationMatrix[12] + ","
+															+ data.rotationMatrix[13] + ","
+															+ data.rotationMatrix[14] + ","
+															+ data.rotationMatrix[15] + ")";
+            });
+            		
+		</script>
+	</head>
+	<body onload="initWebRTC();">
+		<img src="" id="imagefile">
+	</body>
+</html>
+
