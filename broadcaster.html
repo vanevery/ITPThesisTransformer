@@ -1,0 +1,121 @@
+<html>
+	<head>
+		<script type="text/javascript" src="JSARToolKit.min.js"></script>
+		<script type="text/javascript" src="ardetector.js"></script>
+		<script src="/socket.io/socket.io.js"></script>
+		<script>
+			var socket = io.connect('http://localhost:8080/');
+			
+			var thecanvas = null;
+			var thecontext = null;
+			var sendNewImage = false;
+			
+			var detector = null;
+			
+			socket.on('connect', function() {
+				console.log("Connected");
+				// Tell the server we are a broadcaster
+				socket.emit('broadcaster', null);
+
+				sendNewImage = true;
+			});
+
+			// Server got our last image
+            		socket.on('gotimage', function(data) {
+            			//console.log("Sent image was received");
+            			sendNewImage = true;
+            		});
+			
+			var initWebRTC = function() {
+			
+				// These help with cross-browser functionality
+				window.URL = window.URL || window.webkitURL || window.mozURL || window.msURL;
+				navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
+				
+				// The video element on the page to display the webcam
+				var video = document.getElementById('thevideo');
+
+				thecanvas = document.getElementById('thecanvas');
+				thecontext = thecanvas.getContext('2d');
+				
+				DEBUG = true;
+				detector = create(thecanvas);
+
+				// if we have the method
+				if (navigator.getUserMedia) {
+					navigator.getUserMedia({video: true}, function(stream) {
+							video.src = window.URL.createObjectURL(stream) || stream;
+							video.play();
+							draw();			
+						}, function(error) {alert("Failure " + error.code);});
+				}
+							
+				var draw = function() {
+					//console.log("draw");
+					thecontext.drawImage(video,0,0,video.width,video.height);
+					thecanvas.changed = true;
+					
+					try {
+						detector.detect(
+							function(marker) { 
+								console.log("oncreate: " + JSON.stringify(marker.matrix)); 
+								sendImage(marker.matrix);
+							}, 
+							function(marker) { 
+								console.log("onupdate: " + JSON.stringify(marker.matrix)); 
+								sendImage(marker.matrix);
+							}, 
+							function(marker) { 
+								console.log("ondestroy: " + marker.matrix); 
+							}
+						);				
+									
+					} catch (e) {
+						//console.log(e);
+					}
+					
+						
+					sendImage();	
+					
+					setTimeout(draw,3000);
+				};
+				
+				var sendImage = function(rotationMatrix) {
+					if (typeof rotationMatrix !== 'undefined') {
+						thecanvas.style.transform = "matrix3d(" + rotationMatrix[0] + ","
+															+ rotationMatrix[1] + ","
+															+ rotationMatrix[2] + ","
+															+ rotationMatrix[3] + ","
+															+ rotationMatrix[4] + ","
+															+ rotationMatrix[5] + ","
+															+ rotationMatrix[6] + ","
+															+ rotationMatrix[7] + ","
+															+ rotationMatrix[8] + ","
+															+ rotationMatrix[9] + ","
+															+ rotationMatrix[10] + ","
+															+ rotationMatrix[11] + ","
+															+ rotationMatrix[12] + ","
+															+ rotationMatrix[13] + ","
+															+ rotationMatrix[14] + ","
+															+ rotationMatrix[15] + ")";
+					}
+															
+					if (sendNewImage) {
+						var dataUrl = thecanvas.toDataURL('image/webp', 1);
+						socket.emit('image', {dataUrl: dataUrl, rotationMatrix: rotationMatrix});
+						sendNewImage = false;
+					}				
+				};
+
+			};
+		
+		</script>
+	</head>
+	<body onload="initWebRTC();">
+		Video: <video id="thevideo" width="320" height="240" autoplay></video>
+		Canvas: <canvas id="thecanvas" width="320" height="240"></canvas>
+		Debug:	<canvas id="debugCanvas"></canvas>
+
+	</body>
+</html>
+
